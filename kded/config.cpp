@@ -115,14 +115,7 @@ std::unique_ptr<Config> Config::readFile(const QString &fileName)
     QVariantList outputs = parser.fromJson(file.readAll()).toVariant().toList();
     Output::readInOutputs(config->data(), outputs);
 
-    QFile screenFile(file.fileName() + QStringLiteral(".screen"));
-    if (screenFile.open(QIODevice::ReadOnly)) {
-        const QVariantMap top = QJsonDocument::fromJson(screenFile.readAll()).toVariant().toMap();
-        const QVariantMap fb = top[QStringLiteral("explicitSize")].toMap();
-        if (!fb.isEmpty()) {
-            config->data()->screen()->setExplicitSize(QSize(fb[QStringLiteral("width")].toInt(), fb[QStringLiteral("height")].toInt()));
-        }
-    }
+    config->loadScreenSidecar();
 
     QSize screenSize;
     const auto configOutputs = config->data()->outputs();
@@ -238,8 +231,29 @@ bool Config::writeFile(const QString &filePath)
     file.write(QJsonDocument::fromVariant(outputList).toJson());
     qCDebug(KSCREEN_KDED) << "Config saved on: " << file.fileName();
 
-    const QSize fbSize = m_data->screen() ? m_data->screen()->explicitSize() : QSize();
-    QFile screenFile(filePath + QStringLiteral(".screen"));
+    return true;
+}
+
+void Config::loadScreenSidecar()
+{
+    if (!m_data || !m_data->screen()) {
+        return;
+    }
+    QFile screenFile(filePath() + QStringLiteral(".screen"));
+    if (!screenFile.open(QIODevice::ReadOnly)) {
+        return;
+    }
+    const QVariantMap top = QJsonDocument::fromJson(screenFile.readAll()).toVariant().toMap();
+    const QVariantMap fb = top[QStringLiteral("explicitSize")].toMap();
+    if (!fb.isEmpty()) {
+        m_data->screen()->setExplicitSize(QSize(fb[QStringLiteral("width")].toInt(), fb[QStringLiteral("height")].toInt()));
+    }
+}
+
+void Config::writeScreenSidecar()
+{
+    const QSize fbSize = (m_data && m_data->screen()) ? m_data->screen()->explicitSize() : QSize();
+    QFile screenFile(filePath() + QStringLiteral(".screen"));
     if (fbSize.isValid()) {
         if (screenFile.open(QIODevice::WriteOnly)) {
             QVariantMap fb;
@@ -252,8 +266,6 @@ bool Config::writeFile(const QString &filePath)
     } else if (screenFile.exists()) {
         screenFile.remove();
     }
-
-    return true;
 }
 
 void Config::log()

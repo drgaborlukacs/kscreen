@@ -25,6 +25,9 @@ public:
     std::unique_ptr<Config> readOpenLidFile();
     bool writeFile();
     bool writeOpenLidFile();
+
+    void loadScreenSidecar();
+    void writeScreenSidecar();
     static QString configsDirPath();
 
     KScreen::ConfigPtr data() const

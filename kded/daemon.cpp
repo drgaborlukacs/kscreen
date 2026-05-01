@@ -151,6 +151,7 @@ void KScreenDaemon::doApplyConfig(std::unique_ptr<Config> config)
 {
     m_monitoredConfig = std::move(config);
 
+    m_monitoredConfig->writeScreenSidecar();
     m_monitoredConfig->activateControlWatching();
 
     refreshConfig();
@@ -222,6 +223,7 @@ void KScreenDaemon::applyIdealConfig()
 void KScreenDaemon::configChanged()
 {
     qCDebug(KSCREEN_KDED) << "Change detected";
+    m_monitoredConfig->loadScreenSidecar();
     m_monitoredConfig->log();
 
     // Modes may have changed, fix-up current mode id
