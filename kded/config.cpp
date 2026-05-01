@@ -243,6 +243,9 @@ void Config::loadScreenSidecar()
     if (!m_data || !m_data->screen()) {
         return;
     }
+    if (m_data->screen()->explicitSize().isValid()) {
+        return;
+    }
     QFile screenFile(filePath() + QStringLiteral(".screen"));
     if (!screenFile.open(QIODevice::ReadOnly)) {
         return;
