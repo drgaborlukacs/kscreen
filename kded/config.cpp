@@ -159,7 +159,11 @@ bool Config::canBeApplied(KScreen::ConfigPtr config) const
 
 bool Config::writeFile()
 {
-    return writeFile(filePath());
+    if (!writeFile(filePath())) {
+        return false;
+    }
+    writeScreenSidecar();
+    return true;
 }
 
 bool Config::writeOpenLidFile()
