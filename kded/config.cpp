@@ -115,6 +115,15 @@ std::unique_ptr<Config> Config::readFile(const QString &fileName)
     QVariantList outputs = parser.fromJson(file.readAll()).toVariant().toList();
     Output::readInOutputs(config->data(), outputs);
 
+    QFile screenFile(file.fileName() + QStringLiteral(".screen"));
+    if (screenFile.open(QIODevice::ReadOnly)) {
+        const QVariantMap top = QJsonDocument::fromJson(screenFile.readAll()).toVariant().toMap();
+        const QVariantMap fb = top[QStringLiteral("explicitSize")].toMap();
+        if (!fb.isEmpty()) {
+            config->data()->screen()->setExplicitSize(QSize(fb[QStringLiteral("width")].toInt(), fb[QStringLiteral("height")].toInt()));
+        }
+    }
+
     QSize screenSize;
     const auto configOutputs = config->data()->outputs();
     for (const auto &output : configOutputs) {
@@ -228,6 +237,21 @@ bool Config::writeFile(const QString &filePath)
     }
     file.write(QJsonDocument::fromVariant(outputList).toJson());
     qCDebug(KSCREEN_KDED) << "Config saved on: " << file.fileName();
+
+    const QSize fbSize = m_data->screen() ? m_data->screen()->explicitSize() : QSize();
+    QFile screenFile(filePath + QStringLiteral(".screen"));
+    if (fbSize.isValid()) {
+        if (screenFile.open(QIODevice::WriteOnly)) {
+            QVariantMap fb;
+            fb[QStringLiteral("width")] = fbSize.width();
+            fb[QStringLiteral("height")] = fbSize.height();
+            QVariantMap top;
+            top[QStringLiteral("explicitSize")] = fb;
+            screenFile.write(QJsonDocument::fromVariant(top).toJson());
+        }
+    } else if (screenFile.exists()) {
+        screenFile.remove();
+    }
 
     return true;
 }

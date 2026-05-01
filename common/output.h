@@ -32,6 +32,7 @@ public:
         std::optional<KScreen::Output::Rotation> rotation;
         std::optional<KScreen::Output::VrrPolicy> vrrPolicy;
         std::optional<uint32_t> overscan;
+        std::optional<QRect> panning;
         std::optional<KScreen::Output::RgbRange> rgbRange;
     };
     static GlobalConfig readGlobal(const KScreen::OutputPtr &output);

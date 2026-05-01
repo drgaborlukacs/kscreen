@@ -48,6 +48,14 @@ static Output::GlobalConfig fromInfo(const KScreen::OutputPtr output, const QVar
         config.overscan = overscan;
     }
 
+    const QVariantMap panningInfo = info[QStringLiteral("panning")].toMap();
+    if (!panningInfo.isEmpty()) {
+        config.panning = QRect(panningInfo[QStringLiteral("x")].toInt(),
+                               panningInfo[QStringLiteral("y")].toInt(),
+                               panningInfo[QStringLiteral("width")].toInt(),
+                               panningInfo[QStringLiteral("height")].toInt());
+    }
+
     if (auto rgbRange = static_cast<KScreen::Output::RgbRange>(info.value(QStringLiteral("rgbrange")).toUInt(&ok)); ok) {
         config.rgbRange = rgbRange;
     }
@@ -81,6 +89,7 @@ void Output::readInGlobalPartFromInfo(KScreen::OutputPtr output, const QVariantM
     output->setScale(config.scale.value_or(1.0));
     output->setVrrPolicy(config.vrrPolicy.value_or(KScreen::Output::VrrPolicy::Automatic));
     output->setOverscan(config.overscan.value_or(0));
+    output->setPanning(config.panning.value_or(QRect()));
     output->setRgbRange(config.rgbRange.value_or(KScreen::Output::RgbRange::Automatic));
 
     KScreen::ModePtr matchingMode;
@@ -442,6 +451,14 @@ bool Output::writeGlobalPart(const KScreen::OutputPtr &output, QVariantMap &info
     info[QStringLiteral("mode")] = modeInfo;
     info[QStringLiteral("vrrpolicy")] = static_cast<uint32_t>(output->vrrPolicy());
     info[QStringLiteral("overscan")] = output->overscan();
+
+    const QRect pan = output->panning();
+    QVariantMap panningMap;
+    panningMap[QStringLiteral("x")] = pan.x();
+    panningMap[QStringLiteral("y")] = pan.y();
+    panningMap[QStringLiteral("width")] = pan.width();
+    panningMap[QStringLiteral("height")] = pan.height();
+    info[QStringLiteral("panning")] = panningMap;
     info[QStringLiteral("rgbrange")] = static_cast<uint32_t>(output->rgbRange());
 
     return true;
