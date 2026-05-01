@@ -50,10 +50,13 @@ static Output::GlobalConfig fromInfo(const KScreen::OutputPtr output, const QVar
 
     const QVariantMap panningInfo = info[QStringLiteral("panning")].toMap();
     if (!panningInfo.isEmpty()) {
-        config.panning = QRect(panningInfo[QStringLiteral("x")].toInt(),
-                               panningInfo[QStringLiteral("y")].toInt(),
-                               panningInfo[QStringLiteral("width")].toInt(),
-                               panningInfo[QStringLiteral("height")].toInt());
+        const QRect pan(panningInfo[QStringLiteral("x")].toInt(),
+                        panningInfo[QStringLiteral("y")].toInt(),
+                        panningInfo[QStringLiteral("width")].toInt(),
+                        panningInfo[QStringLiteral("height")].toInt());
+        if (pan.isValid()) {
+            config.panning = pan;
+        }
     }
 
     if (auto rgbRange = static_cast<KScreen::Output::RgbRange>(info.value(QStringLiteral("rgbrange")).toUInt(&ok)); ok) {
@@ -453,12 +456,14 @@ bool Output::writeGlobalPart(const KScreen::OutputPtr &output, QVariantMap &info
     info[QStringLiteral("overscan")] = output->overscan();
 
     const QRect pan = output->panning();
-    QVariantMap panningMap;
-    panningMap[QStringLiteral("x")] = pan.x();
-    panningMap[QStringLiteral("y")] = pan.y();
-    panningMap[QStringLiteral("width")] = pan.width();
-    panningMap[QStringLiteral("height")] = pan.height();
-    info[QStringLiteral("panning")] = panningMap;
+    if (pan.isValid()) {
+        QVariantMap panningMap;
+        panningMap[QStringLiteral("x")] = pan.x();
+        panningMap[QStringLiteral("y")] = pan.y();
+        panningMap[QStringLiteral("width")] = pan.width();
+        panningMap[QStringLiteral("height")] = pan.height();
+        info[QStringLiteral("panning")] = panningMap;
+    }
     info[QStringLiteral("rgbrange")] = static_cast<uint32_t>(output->rgbRange());
 
     return true;
